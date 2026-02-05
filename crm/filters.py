@@ -1,60 +1,60 @@
-import django_filters as filters
+import django_filters
 from .models import Customer, Product, Order
 import re
 
-class CustomerFilter(filters.FilterSet):
+class CustomerFilter(django_filters.FilterSet):
     # Filter by name (case-insensitive partial match)
-    name_Icontains = filters.CharFilter(field_name='name', lookup_expr='icontains')
+    name_Icontains = django_filters.CharFilter(field_name='name', lookup_expr='icontains')
 
     # Filter by email (case-insensitive partial match)
-    email_Icontains = filters.CharFilter(field_name='email', lookup_expr='icontains')
+    email_Icontains = django_filters.CharFilter(field_name='email', lookup_expr='icontains')
 
     # Filter by creation date range
-    createdAt_Gte = filters.DateFilter(field_name='created_at', lookup_expr='gte')
-    createdAt_Lte = filters.DateFilter(field_name='created_at', lookup_expr='lte')
+    createdAt_Gte = django_filters.DateFilter(field_name='created_at', lookup_expr='gte')
+    createdAt_Lte = django_filters.DateFilter(field_name='created_at', lookup_expr='lte')
 
     # Custom filter: phone number pattern (e.g., starts with +1)
-    phone_Startswith = filters.CharFilter(field_name='phone', lookup_expr='startswith')
+    phone_Startswith = django_filters.CharFilter(field_name='phone', lookup_expr='startswith')
 
     class Meta:
         model = Customer
-        fields = []
+        fields = ['name', 'email']
         order_by = ['name', 'email', 'created_at', '-name', '-email', '-created_at']
 
-class ProductFilter(filters.FilterSet):
+class ProductFilter(django_filters.FilterSet):
     # Filter by name (case-insensitive partial match)
-    name_Icontains = filters.CharFilter(field_name='name', lookup_expr='icontains')
+    name_Icontains = django_filters.CharFilter(field_name='name', lookup_expr='icontains')
 
     # Filter by price range
-    price_Gte = filters.NumberFilter(field_name='price', lookup_expr='gte')
-    price_Lte = filters.NumberFilter(field_name='price', lookup_expr='lte')
+    price_Gte = django_filters.NumberFilter(field_name='price', lookup_expr='gte')
+    price_Lte = django_filters.NumberFilter(field_name='price', lookup_expr='lte')
 
     # Filter by stock (exact match or range)
-    stock_Gte = filters.NumberFilter(field_name='stock', lookup_expr='gte')
-    stock_Lte = filters.NumberFilter(field_name='stock', lookup_expr='lte')
+    stock_Gte = django_filters.NumberFilter(field_name='stock', lookup_expr='gte')
+    stock_Lte = django_filters.NumberFilter(field_name='stock', lookup_expr='lte')
 
     class Meta:
         model = Product
         fields = []
         order_by = ['name', 'price', 'stock', '-name', '-price', '-stock']
 
-class OrderFilter(filters.FilterSet):
+class OrderFilter(django_filters.FilterSet):
     # Filter by total amount range
-    totalAmount_Gte = filters.NumberFilter(field_name='total_amount', lookup_expr='gte')
-    totalAmount_Lte = filters.NumberFilter(field_name='total_amount', lookup_expr='lte')
+    totalAmount_Gte = django_filters.NumberFilter(field_name='total_amount', lookup_expr='gte')
+    totalAmount_Lte = django_filters.NumberFilter(field_name='total_amount', lookup_expr='lte')
 
     # Filter by order date range
-    orderDate_Gte = filters.DateFilter(field_name='order_date', lookup_expr='gte')
-    orderDate_Lte = filters.DateFilter(field_name='order_date', lookup_expr='lte')
+    orderDate_Gte = django_filters.DateFilter(field_name='order_date', lookup_expr='gte')
+    orderDate_Lte = django_filters.DateFilter(field_name='order_date', lookup_expr='lte')
 
     # Filter by customer name (related field, case-insensitive partial match)
-    customerName_Icontains = filters.CharFilter(field_name='customer__name', lookup_expr='icontains')
+    customerName_Icontains = django_filters.CharFilter(field_name='customer__name', lookup_expr='icontains')
 
     # Filter by product name (related field, case-insensitive partial match)
-    productName_Icontains = filters.CharFilter(field_name='products__name', lookup_expr='icontains')
+    productName_Icontains = django_filters.CharFilter(field_name='products__name', lookup_expr='icontains')
 
     # Challenge: Filter by specific product ID
-    productId = filters.UUIDFilter(field_name='products__id', lookup_expr='exact')
+    productId = django_filters.UUIDFilter(field_name='products__id', lookup_expr='exact')
 
     class Meta:
         model = Order

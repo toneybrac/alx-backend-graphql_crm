@@ -1,6 +1,7 @@
 import graphene
+from graphene import relay
 from graphene_django import DjangoObjectType
-from graphene_django.filter import DjangoFilterConnectionField  # MOVE THIS HERE
+from graphene_django.filter import DjangoFilterConnectionField
 from django.db import transaction
 from django.core.exceptions import ValidationError
 import re
@@ -13,19 +14,19 @@ from .filters import CustomerFilter, ProductFilter, OrderFilter
 class CustomerNode(DjangoObjectType):
     class Meta:
         model = Customer
-        interfaces = (graphene.relay.Node,)
+        interfaces = (relay.Node,)
         filterset_class = CustomerFilter
 
 class ProductNode(DjangoObjectType):
     class Meta:
         model = Product
-        interfaces = (graphene.relay.Node,)
+        interfaces = (relay.Node,)
         filterset_class = ProductFilter
 
 class OrderNode(DjangoObjectType):
     class Meta:
         model = Order
-        interfaces = (graphene.relay.Node,)
+        interfaces = (relay.Node,)
         filterset_class = OrderFilter
     
     products = graphene.List(ProductNode)
