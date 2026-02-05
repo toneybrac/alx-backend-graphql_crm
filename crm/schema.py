@@ -1,12 +1,39 @@
 import graphene
 from graphene_django import DjangoObjectType
+from graphene_django.filter import DjangoFilterConnectionField  # MOVE THIS HERE
 from django.db import transaction
 from django.core.exceptions import ValidationError
-from django.db import IntegrityError
 import re
 from .models import Customer, Product, Order
+from .filters import CustomerFilter, ProductFilter, OrderFilter
 
-# Type Definitions
+# ============ TYPE DEFINITIONS ============
+
+# Node types for Relay connections with filtering
+class CustomerNode(DjangoObjectType):
+    class Meta:
+        model = Customer
+        interfaces = (graphene.relay.Node,)
+        filterset_class = CustomerFilter
+
+class ProductNode(DjangoObjectType):
+    class Meta:
+        model = Product
+        interfaces = (graphene.relay.Node,)
+        filterset_class = ProductFilter
+
+class OrderNode(DjangoObjectType):
+    class Meta:
+        model = Order
+        interfaces = (graphene.relay.Node,)
+        filterset_class = OrderFilter
+    
+    products = graphene.List(ProductNode)
+    
+    def resolve_products(self, info):
+        return self.products.all()
+
+# Regular Types for backward compatibility (from Task 1)
 class CustomerType(DjangoObjectType):
     class Meta:
         model = Customer
@@ -27,7 +54,8 @@ class OrderType(DjangoObjectType):
     def resolve_products(self, info):
         return self.products.all()
 
-# Input Types
+# ============ INPUT TYPES (From Task 1) ============
+
 class CustomerInput(graphene.InputObjectType):
     name = graphene.String(required=True)
     email = graphene.String(required=True)
@@ -46,7 +74,8 @@ class OrderInput(graphene.InputObjectType):
     product_ids = graphene.List(graphene.String, required=True)
     order_date = graphene.DateTime()
 
-# Response Types
+# ============ RESPONSE TYPES (From Task 1) ============
+
 class CreateCustomerResponse(graphene.ObjectType):
     customer = graphene.Field(CustomerType)
     message = graphene.String()
@@ -61,7 +90,8 @@ class CreateProductResponse(graphene.ObjectType):
 class CreateOrderResponse(graphene.ObjectType):
     order = graphene.Field(OrderType)
 
-# Mutations
+# ============ MUTATIONS (From Task 1 - Keep as is) ============
+
 class CreateCustomer(graphene.Mutation):
     class Arguments:
         input = CustomerInput(required=True)
@@ -227,8 +257,15 @@ class CreateOrder(graphene.Mutation):
         except Exception as e:
             raise ValidationError(f"Error creating order: {str(e)}")
 
-# Query Class
+# ============ QUERY CLASS WITH FILTERING (Task 3) ============
+
 class Query(graphene.ObjectType):
+    # Relay-style connections with filtering (Task 3)
+    all_customers = DjangoFilterConnectionField(CustomerNode)
+    all_products = DjangoFilterConnectionField(ProductNode)
+    all_orders = DjangoFilterConnectionField(OrderNode)
+    
+    # Regular queries (from Task 1 - keep for backward compatibility)
     customers = graphene.List(CustomerType)
     products = graphene.List(ProductType)
     orders = graphene.List(OrderType)
@@ -242,9 +279,14 @@ class Query(graphene.ObjectType):
     def resolve_orders(self, info):
         return Order.objects.all()
 
-# Mutation Class
+# ============ MUTATION CLASS (From Task 1) ============
+
 class Mutation(graphene.ObjectType):
     create_customer = CreateCustomer.Field()
     bulk_create_customers = BulkCreateCustomers.Field()
     create_product = CreateProduct.Field()
     create_order = CreateOrder.Field()
+
+# ============ SCHEMA DEFINITION ============
+
+schema = graphene.Schema(query=Query, mutation=Mutation)

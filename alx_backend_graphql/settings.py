@@ -37,6 +37,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Third-party apps
+    'graphene_django',
+    'django_filters',
+
+    # Local apps
+    'crm',
 ]
 
 MIDDLEWARE = [
@@ -49,7 +56,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'alx_backend_graphql_crm.urls'
+ROOT_URLCONF = 'alx_backend_graphql.urls'  # Changed from 'alx_backend_graphql_crm.urls'
 
 TEMPLATES = [
     {
@@ -66,7 +73,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'alx_backend_graphql_crm.wsgi.application'
+WSGI_APPLICATION = 'alx_backend_graphql.wsgi.application'  # Changed from 'alx_backend_graphql_crm.wsgi.application'
 
 
 # Database
@@ -116,30 +123,12 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Default primary key field type
+# https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-
-# Add at the bottom, before any existing closing parts:
-
-# Application definition - Add these to INSTALLED_APPS
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    
-    # Third-party apps
-    'graphene_django',
-    
-    # Local apps
-    'crm',
-]
-
-# Add this at the very bottom of the file:
 # GraphQL Configuration
 GRAPHENE = {
-    'SCHEMA': 'alx_backend_graphql_crm.schema.schema',
+    'SCHEMA': 'alx_backend_graphql.schema.schema',  # Changed from 'alx_backend_graphql_crm.schema.schema'
 }
