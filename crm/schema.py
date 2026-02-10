@@ -5,6 +5,7 @@ from graphene_django.filter import DjangoFilterConnectionField
 from django.db import transaction
 from django.core.exceptions import ValidationError
 import re
+from datetime import datetime
 from .models import Customer, Product, Order
 from .filters import CustomerFilter, ProductFilter, OrderFilter
 
@@ -54,6 +55,23 @@ class OrderType(DjangoObjectType):
     
     def resolve_products(self, info):
         return self.products.all()
+
+# ============ NEW TYPES FOR LOW-STOCK MUTATION ============
+
+class ProductUpdateType(graphene.ObjectType):
+    """Type representing an updated product for low-stock mutation"""
+    id = graphene.String()
+    name = graphene.String()
+    old_stock = graphene.Int()
+    new_stock = graphene.Int()
+    updated_at = graphene.String()
+
+class UpdateLowStockProductsResponse(graphene.ObjectType):
+    """Response type for the low-stock update mutation"""
+    success = graphene.Boolean()
+    message = graphene.String()
+    updated_products = graphene.List(ProductUpdateType)
+    total_updated = graphene.Int()
 
 # ============ INPUT TYPES (From Task 1) ============
 
@@ -258,6 +276,88 @@ class CreateOrder(graphene.Mutation):
         except Exception as e:
             raise ValidationError(f"Error creating order: {str(e)}")
 
+# ============ NEW MUTATION FOR LOW-STOCK PRODUCTS ============
+
+class UpdateLowStockProducts(graphene.Mutation):
+    """
+    Mutation to update low-stock products (stock < 10)
+    Increments stock by 10 (simulating restocking)
+    Returns a list of updated products and a success message
+    """
+    
+    class Arguments:
+        """Optional arguments for the mutation"""
+        increment_by = graphene.Int(
+            description="Amount to increment stock by (default: 10)",
+            default_value=10
+        )
+        threshold = graphene.Int(
+            description="Stock threshold (default: 10)",
+            default_value=10
+        )
+    
+    Output = UpdateLowStockProductsResponse
+    
+    @staticmethod
+    @transaction.atomic
+    def mutate(root, info, increment_by=10, threshold=10):
+        """
+        Execute the mutation to update low-stock products
+        
+        Queries products with stock < threshold
+        Increments their stock by increment_by
+        Returns updated products and success message
+        """
+        try:
+            # Query products with stock less than threshold
+            low_stock_products = Product.objects.filter(stock__lt=threshold)
+            
+            if not low_stock_products.exists():
+                return UpdateLowStockProductsResponse(
+                    success=True,
+                    message=f"No products found with stock less than {threshold}",
+                    updated_products=[],
+                    total_updated=0
+                )
+            
+            updated_products_data = []
+            
+            # Update each product and collect data
+            for product in low_stock_products:
+                old_stock = product.stock
+                new_stock = old_stock + increment_by
+                
+                # Update the product stock
+                product.stock = new_stock
+                product.save()
+                
+                # Add to response data
+                updated_products_data.append(ProductUpdateType(
+                    id=str(product.id),
+                    name=product.name,
+                    old_stock=old_stock,
+                    new_stock=new_stock,
+                    updated_at=datetime.now().isoformat()
+                ))
+            
+            # Return success response
+            return UpdateLowStockProductsResponse(
+                success=True,
+                message=f"Successfully updated {len(updated_products_data)} products with stock less than {threshold}",
+                updated_products=updated_products_data,
+                total_updated=len(updated_products_data)
+            )
+            
+        except Exception as e:
+            # Rollback transaction on error
+            transaction.set_rollback(True)
+            return UpdateLowStockProductsResponse(
+                success=False,
+                message=f"Error updating low-stock products: {str(e)}",
+                updated_products=[],
+                total_updated=0
+            )
+
 # ============ QUERY CLASS WITH FILTERING (Task 3) ============
 
 class Query(graphene.ObjectType):
@@ -271,6 +371,12 @@ class Query(graphene.ObjectType):
     products = graphene.List(ProductType)
     orders = graphene.List(OrderType)
     
+    # New query for low-stock products
+    low_stock_products = graphene.List(
+        ProductType,
+        threshold=graphene.Int(default_value=10)
+    )
+    
     def resolve_customers(self, info):
         return Customer.objects.all()
     
@@ -279,14 +385,22 @@ class Query(graphene.ObjectType):
     
     def resolve_orders(self, info):
         return Order.objects.all()
+    
+    def resolve_low_stock_products(self, info, threshold=10):
+        """Query to get low-stock products"""
+        return Product.objects.filter(stock__lt=threshold)
 
-# ============ MUTATION CLASS (From Task 1) ============
+# ============ MUTATION CLASS (Updated with low-stock mutation) ============
 
 class Mutation(graphene.ObjectType):
+    # Existing mutations
     create_customer = CreateCustomer.Field()
     bulk_create_customers = BulkCreateCustomers.Field()
     create_product = CreateProduct.Field()
     create_order = CreateOrder.Field()
+    
+    # New mutation for low-stock products
+    update_low_stock_products = UpdateLowStockProducts.Field()
 
 # ============ SCHEMA DEFINITION ============
 

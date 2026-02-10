@@ -41,10 +41,37 @@ INSTALLED_APPS = [
     # Third-party apps
     'graphene_django',
     'django_filters',
+    'django_crontab', 
 
     # Local apps
     'crm',
+    'customers',
+    'orders',
 ]
+
+
+# Django Crontab Configuration
+CRONJOBS = [
+    # Run heartbeat every 5 minutes
+    ('*/5 * * * *', 'crm.cron.log_crm_heartbeat'),
+
+# Optional: Additional cron jobs
+    # ('0 0 * * *', 'crm.cron.cleanup_old_logs'),  # Daily at midnight
+    # ('0 2 * * 0', 'customers.cron.clean_inactive_customers'),  # Weekly cleanup
+]
+
+# Optional: Where to store cron job logs
+CRONTAB_COMMAND_SUFFIX = '2>&1'  # Redirect stderr to stdout
+
+# Optional: Lock file settings to prevent overlapping jobs
+CRONTAB_LOCK_JOBS = True
+
+# Optional: Django project path for cron jobs
+CRONTAB_DJANGO_PROJECT_DIR = BASE_DIR
+
+# Optional: Python path for cron jobs
+CRONTAB_PYTHON_EXECUTABLE = sys.executable
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
